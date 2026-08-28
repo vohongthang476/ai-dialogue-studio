@@ -220,7 +220,34 @@
     }
 
     // Dynamic auto-detect available models from the provided key
-    async function async function callGeminiDynamic(apiKey, prompt) {
+    async function async function async function callGeminiDynamic(apiKey, prompt) {
+      // Gọi trực tiếp qua API v1 chính thức để tương thích với Key GCP/AI Studio
+      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Lỗi API (${res.status}): ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      let clean = textResponse.trim();
+      if (clean.includes('```')) {
+        clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
+      }
+      return JSON.parse(clean);
+    }(apiKey, prompt) {
       // 1. Thử gọi qua v1 chính thức (tương thích hoàn hảo với key GCP/AI Studio)
       const endpoints = [
         `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
