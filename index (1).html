@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Audio Dialogue & Video Creator Studio</title>
+  
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- JSZip & FileSaver CDN for full project export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
+
+  <!-- Top Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-blue-600 flex items-center justify-center text-white text-xl shadow-lg shadow-teal-500/20">
+          <i class="fa-solid fa-microphone-lines"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-teal-400 to-blue-400 bg-clip-text text-transparent">AI Video & Dialogue Studio</h1>
+          <p class="text-xs text-slate-400">Tự động hoá Kịch bản • Giọng đọc AI • Phụ đề & B-Roll</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleConfigModal()" class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-gear text-teal-400"></i> Cấu hình API
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- Step 1: Input & Script Settings -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="text-base font-semibold text-teal-400 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 text-xs flex items-center justify-center font-bold">1</span>
+          Nội dung đầu vào & Phong cách
+        </h2>
+        <span class="text-xs text-slate-400">Hỗ trợ dán Text thô hoặc URL bài báo</span>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Văn bản bài viết hoặc Đường dẫn (URL):</label>
+          <div class="relative">
+            <textarea id="rawInput" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm focus:outline-none focus:border-teal-500 transition text-slate-200" placeholder="Nhập văn bản, kịch bản thô hoặc dán URL bài báo (ví dụ: https://vnexpress.net/...)..."></textarea>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Phong cách kịch bản</label>
+            <select id="scriptStyle" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-teal-500">
+              <option value="sports">Bình luận thể thao dồn dập (Giống BLV Mai Anh Tài)</option>
+              <option value="podcast_2p">Podcast đối thoại 2 người (MC Nam & MC Nữ)</option>
+              <option value="storytelling">Kể chuyện kịch tính / Review phim lôi cuốn</option>
+              <option value="news_analysis">Bản tin phân tích / bình luận chuyên sâu</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Giọng Nhân vật 1 (Mặc định)</label>
+            <select id="defaultVoice1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-teal-500">
+              <option value="hn_male_manhdung_news_48k-fh">Mạnh Dũng (Nam Bắc - Thể thao/Tin tức)</option>
+              <option value="hn_female_thutrang_news_48k-fh">Thu Trang (Nữ Bắc - Phát thanh viên)</option>
+              <option value="sg_male_minhhoang_news_48k-fh">Minh Hoàng (Nam Nam - Podcast/Review)</option>
+              <option value="sg_female_maiphuong_news_48k-fh">Mai Phương (Nữ Nam - Năng động)</option>
+              <option value="hue_female_myan_news_48k-fh">Mỹ An (Nữ Trung - Dịu dàng)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Giọng Nhân vật 2 (Nếu đối thoại)</label>
+            <select id="defaultVoice2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-teal-500">
+              <option value="hn_female_thutrang_news_48k-fh">Thu Trang (Nữ Bắc - Phát thanh viên)</option>
+              <option value="hn_male_manhdung_news_48k-fh">Mạnh Dũng (Nam Bắc - Thể thao/Tin tức)</option>
+              <option value="sg_female_maiphuong_news_48k-fh">Mai Phương (Nữ Nam - Năng động)</option>
+              <option value="sg_male_minhhoang_news_48k-fh">Minh Hoàng (Nam Nam - Podcast/Review)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="btnGenerateScript" onclick="processInputAndGenerateScript()" class="w-full bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 transition">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích nội dung & Tạo kịch bản phân vai
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: Interactive Script Editor -->
+    <section id="scriptSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-bold">2</span>
+          <h2 class="text-base font-semibold text-amber-400">Kịch bản & Tinh chỉnh lời thoại</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="addDialogueItem()" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300">
+            <i class="fa-solid fa-plus"></i> Thêm câu thoại
+          </button>
+        </div>
+      </div>
+
+      <div id="dialogueList" class="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+        <!-- Dialogue rows inserted by JS -->
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex flex-col md:flex-row gap-3">
+        <button id="btnRenderAudio" onclick="renderFullAudioProject()" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition">
+          <i class="fa-solid fa-microphone-lines"></i> Tạo Âm thanh Vbee & Tìm Video B-Roll
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 3: Audio Player, Subtitle & B-Roll Suggestions -->
+    <section id="outputSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center font-bold">3</span>
+          <h2 class="text-base font-semibold text-blue-400">Kết quả & Tài nguyên dựng video</h2>
+        </div>
+      </div>
+
+      <!-- Audio Player -->
+      <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-headphones text-teal-400"></i> Âm thanh hội thoại tổng hợp
+          </span>
+          <span id="audioDurationBadge" class="text-xs text-teal-400 bg-teal-950/80 px-2 py-0.5 rounded border border-teal-800">00:00</span>
+        </div>
+        <audio id="mainAudioPlayer" controls class="w-full"></audio>
+      </div>
+
+      <!-- Download Action Bar -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <a id="btnDownloadWav" class="bg-blue-600 hover:bg-blue-700 py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer transition">
+          <i class="fa-solid fa-file-audio"></i> Tải file Âm thanh (.WAV)
+        </a>
+        <button onclick="downloadSrtFile()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-file-lines text-amber-400"></i> Tải file Phụ đề (.SRT)
+        </button>
+        <button onclick="downloadFullZipPackage()" class="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2 shadow-lg transition">
+          <i class="fa-solid fa-file-zipper"></i> Tải Trọn Gói (.ZIP cho CapCut)
+        </button>
+      </div>
+
+      <!-- Suggested B-Roll Videos -->
+      <div class="space-y-3 pt-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-film text-pink-400"></i> Video B-Roll / Hình ảnh gợi ý miễn phí (Pixabay / Pexels)
+          </h3>
+          <span id="brollKeywordTag" class="text-xs text-slate-400"></span>
+        </div>
+        <div id="brollGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- B-roll cards injected here -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- API Settings Modal -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-key text-teal-400"></i> Cấu hình API Keys
+        </h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Gemini API Key (Google AI Studio - Miễn phí):</label>
+          <input type="password" id="cfgGeminiKey" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-teal-500" placeholder="AIzaSy...">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Vbee API App ID / Token (Tạo giọng tiếng Việt):</label>
+          <input type="password" id="cfgVbeeKey" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-teal-500" placeholder="Vbee token...">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Pixabay API Key (Tìm video B-roll miễn phí - Tùy chọn):</label>
+          <input type="password" id="cfgPixabayKey" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-teal-500" placeholder="Pixabay Key (để trống nếu dùng tìm kiếm mặc định)">
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+        <button onclick="toggleConfigModal()" class="px-4 py-2 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg">Đóng</button>
+        <button onclick="saveApiConfigs()" class="px-4 py-2 text-xs bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold rounded-lg">Lưu cấu hình</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // State management
+    let scriptItems = [];
+    let processedAudioSegments = [];
+    let mergedWavBlob = null;
+    let brollLinksList = [];
+
+    const VBEE_VOICE_OPTIONS = [
+      { code: 'hn_male_manhdung_news_48k-fh', name: 'Mạnh Dũng (Nam Bắc - Thể thao/Tin tức)' },
+      { code: 'hn_female_thutrang_news_48k-fh', name: 'Thu Trang (Nữ Bắc - Phát thanh viên)' },
+      { code: 'hn_female_huonggiang_news_48k-fh', name: 'Hương Giang (Nữ Bắc - Truyền cảm)' },
+      { code: 'sg_male_minhhoang_news_48k-fh', name: 'Minh Hoàng (Nam Nam - Review/Podcast)' },
+      { code: 'sg_female_maiphuong_news_48k-fh', name: 'Mai Phương (Nữ Nam - Năng động)' },
+      { code: 'hue_female_myan_news_48k-fh', name: 'Mỹ An (Nữ Trung - Dịu dàng)' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('cfgGeminiKey').value = localStorage.getItem('cfg_gemini_key') || '';
+      document.getElementById('cfgVbeeKey').value = localStorage.getItem('cfg_vbee_key') || '';
+      document.getElementById('cfgPixabayKey').value = localStorage.getItem('cfg_pixabay_key') || '';
+    });
+
+    function toggleConfigModal() {
+      const modal = document.getElementById('configModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function saveApiConfigs() {
+      localStorage.setItem('cfg_gemini_key', document.getElementById('cfgGeminiKey').value.trim());
+      localStorage.setItem('cfg_vbee_key', document.getElementById('cfgVbeeKey').value.trim());
+      localStorage.setItem('cfg_pixabay_key', document.getElementById('cfgPixabayKey').value.trim());
+      toggleConfigModal();
+      alert('Đã lưu API Keys vào trình duyệt thành công!');
+    }
+
+    // Step 1: Process Input (URL via Jina or direct Text) & Call Gemini 2.5 Flash
+    async function processInputAndGenerateScript() {
+      const geminiKey = localStorage.getItem('cfg_gemini_key') || document.getElementById('cfgGeminiKey').value.trim();
+      let inputVal = document.getElementById('rawInput').value.trim();
+      const style = document.getElementById('scriptStyle').value;
+      const v1 = document.getElementById('defaultVoice1').value;
+      const v2 = document.getElementById('defaultVoice2').value;
+
+      if (!geminiKey) {
+        toggleConfigModal();
+        alert('Vui lòng nhập Gemini API Key để tiếp tục!');
+        return;
+      }
+      if (!inputVal) {
+        alert('Vui lòng nhập nội dung văn bản hoặc URL bài báo!');
+        return;
+      }
+
+      const btn = document.getElementById('btnGenerateScript');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích nội dung & tạo kịch bản...`;
+
+      try {
+        // If input is an URL, fetch clean text using Jina Reader API
+        if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
+          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đọc nội dung bài viết từ URL qua Jina AI...`;
+          const jinaUrl = `https://r.jina.ai/${encodeURI(inputVal)}`;
+          const jinaRes = await fetch(jinaUrl);
+          if (jinaRes.ok) {
+            inputVal = await jinaRes.text();
+          }
+        }
+
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI Gemini đang viết kịch bản hội thoại...`;
+
+        let styleDesc = "";
+        if (style === 'sports') {
+          styleDesc = "Phong cách bình luận viên bóng đá/thể thao dồn dập, câu ngắn, đặt vấn đề kích thích như 'Vì sao...', 'Nếu kịch bản này xảy ra...', ngữ điệu nhiệt huyết, nhanh, cuốn hút.";
+        } else if (style === 'podcast_2p') {
+          styleDesc = "Phong cách đối thoại Podcast 2 người (MC Nam và MC Nữ) tung hứng, chia sẻ quan điểm, giải thích dễ hiểu, tự nhiên.";
+        } else if (style === 'storytelling') {
+          styleDesc = "Phong cách kể chuyện kịch tính, lôi cuốn, có cao trào, ngắt nghỉ cảm xúc.";
+        } else {
+          styleDesc = "Phong cách bản tin thời sự, phân tích sâu, giọng đọc đĩnh đạc chuyên nghiệp.";
+        }
+
+        const promptText = `Bạn là chuyên gia biên kịch video ngắn (Shorts/TikTok/Reels/Podcast). Hãy phân tích nội dung sau và viết thành kịch bản phân vai hoàn chỉnh.
+Yêu cầu:
+1. Định dạng phong cách: ${styleDesc}
+2. Sử dụng 2 giọng đọc chính:
+   - Nhân vật 1: mã giọng "${v1}"
+   - Nhân vật 2: mã giọng "${v2}"
+3. Tách thành từng câu thoại ngắn, hấp dẫn người nghe.
+4. Trích xuất 1-2 từ khóa tiếng Anh (keywords) cho mỗi câu để tìm kiếm video B-roll minh họa (ví dụ: ["football", "crowd celebration"]).
+5. Trả về DUY NHẤT một chuỗi JSON hợp lệ với cấu trúc mảng đối tượng:
+[
+  {
+    "speaker": "Tên vai (VD: BLV Thể Thao / MC 1)",
+    "voice_code": "${v1}",
+    "text": "Câu thoại ngắn gọn, cuốn hút...",
+    "speed": 1.15,
+    "keywords": ["football", "vietnam celebration"]
+  }
+]
+
+Nội dung gốc:
+${inputVal.substring(0, 8000)}`;
+
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+
+        if (!geminiRes.ok) throw new Error(`Lỗi Gemini API (${geminiRes.status}): ${geminiRes.statusText}`);
+        
+        const resJson = await geminiRes.json();
+        const rawJsonText = resJson.candidates[0].content.parts[0].text;
+        scriptItems = JSON.parse(rawJsonText);
+
+        renderScriptEditor();
+        document.getElementById('scriptSection').classList.remove('hidden');
+        document.getElementById('scriptSection').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        alert('Lỗi trong quá trình xử lý: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích nội dung & Tạo kịch bản phân vai`;
+      }
+    }
+
+    // Step 2: Render Script Table / Cards for editing
+    function renderScriptEditor() {
+      const container = document.getElementById('dialogueList');
+      container.innerHTML = '';
+
+      scriptItems.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2 relative";
+        
+        let voiceOptionsHtml = VBEE_VOICE_OPTIONS.map(opt => 
+          `<option value="${opt.code}" ${item.voice_code === opt.code ? 'selected' : ''}>${opt.name}</option>`
+        ).join('');
+
+        card.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+              <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-[10px]">${idx + 1}</span>
+              <input type="text" value="${item.speaker}" onchange="updateScriptItem(${idx}, 'speaker', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 font-semibold text-slate-200 text-xs w-28">
+              <select onchange="updateScriptItem(${idx}, 'voice_code', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-teal-400 flex-1">
+                ${voiceOptionsHtml}
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 text-[11px]">Tốc độ:</span>
+              <input type="number" step="0.05" min="0.8" max="1.5" value="${item.speed || 1.1}" onchange="updateScriptItem(${idx}, 'speed', parseFloat(this.value))" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-xs w-14 text-center">
+              <button onclick="deleteScriptItem(${idx})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+          <div>
+            <textarea rows="2" onchange="updateScriptItem(${idx}, 'text', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-teal-500">${item.text}</textarea>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateScriptItem(idx, key, val) {
+      scriptItems[idx][key] = val;
+    }
+
+    function deleteScriptItem(idx) {
+      scriptItems.splice(idx, 1);
+      renderScriptEditor();
+    }
+
+    function addDialogueItem() {
+      const defaultVoice = document.getElementById('defaultVoice1').value;
+      scriptItems.push({
+        speaker: "MC",
+        voice_code: defaultVoice,
+        text: "Lời thoại mới...",
+        speed: 1.1,
+        keywords: ["news"]
+      });
+      renderScriptEditor();
+    }
+
+    // Step 3: Call Vbee API, Concatenate Audio with AudioContext & Fetch B-roll
+    async function renderFullAudioProject() {
+      const vbeeKey = localStorage.getItem('cfg_vbee_key') || document.getElementById('cfgVbeeKey').value.trim();
+      if (!vbeeKey) {
+        toggleConfigModal();
+        alert('Vui lòng nhập Vbee API Token để tạo giọng đọc!');
+        return;
+      }
+      if (scriptItems.length === 0) {
+        alert('Không có câu thoại nào trong kịch bản!');
+        return;
+      }
+
+      const btn = document.getElementById('btnRenderAudio');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang gọi Vbee TTS & Ghép nối âm thanh...`;
+
+      processedAudioSegments = [];
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const decodedBuffers = [];
+
+      try {
+        for (let i = 0; i < scriptItems.length; i++) {
+          const item = scriptItems[i];
+          btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo âm thanh câu (${i + 1}/${scriptItems.length})...`;
+
+          const res = await fetch('https://vbee.vn/api/v1/tts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${vbeeKey}`
+            },
+            body: JSON.stringify({
+              text: item.text,
+              voice_code: item.voice_code,
+              app_id: vbeeKey
+            })
+          });
+
+          if (!res.ok) throw new Error(`Vbee API báo lỗi ở câu ${i + 1}`);
+          const vbeeData = await res.json();
+          const audioUrl = vbeeData.audio_link || vbeeData.result?.audio_link || vbeeData.url;
+
+          // Fetch audio buffer
+          const audioFetch = await fetch(audioUrl);
+          const arrayBuf = await audioFetch.arrayBuffer();
+          const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+          
+          decodedBuffers.push(audioBuf);
+          processedAudioSegments.push({
+            speaker: item.speaker,
+            text: item.text,
+            duration: audioBuf.duration,
+            keywords: item.keywords || []
+          });
+        }
+
+        // Merge Audio Buffers with 0.3s silence gap
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang ghép nối file âm thanh hoàn chỉnh...`;
+        const sampleRate = decodedBuffers[0].sampleRate;
+        const silenceGapSamples = Math.floor(sampleRate * 0.3);
+        const totalSamples = decodedBuffers.reduce((acc, buf) => acc + buf.length + silenceGapSamples, 0);
+
+        const mergedBuffer = audioCtx.createBuffer(1, totalSamples, sampleRate);
+        let offset = 0;
+        for (const buf of decodedBuffers) {
+          mergedBuffer.copyToChannel(buf.getChannelData(0), 0, offset);
+          offset += buf.length + silenceGapSamples;
+        }
+
+        // Convert to WAV Blob
+        mergedWavBlob = audioBufferToWavBlob(mergedBuffer);
+        const mergedUrl = URL.createObjectURL(mergedWavBlob);
+
+        // Update Audio Player
+        const player = document.getElementById('mainAudioPlayer');
+        player.src = mergedUrl;
+        
+        const totalSec = Math.round(mergedBuffer.duration);
+        document.getElementById('audioDurationBadge').innerText = formatTimeDuration(totalSec);
+
+        // Download link
+        const btnDl = document.getElementById('btnDownloadWav');
+        btnDl.href = mergedUrl;
+        btnDl.download = 'audio_hoi_thoai_ai.wav';
+
+        // Fetch B-Roll images/videos
+        fetchSuggestedBrollVideos();
+
+        document.getElementById('outputSection').classList.remove('hidden');
+        document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        alert('Lỗi tạo âm thanh: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-microphone-lines"></i> Tạo Âm thanh Vbee & Tìm Video B-Roll`;
+      }
+    }
+
+    // AudioBuffer to WAV converter
+    function audioBufferToWavBlob(abuffer) {
+      let numOfChan = abuffer.numberOfChannels,
+          length = abuffer.length * numOfChan * 2 + 44,
+          out = new DataView(new ArrayBuffer(length)),
+          channels = [], i, sample, offset = 0, pos = 0;
+
+      function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+      function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+      setUint32(0x46464952); // "RIFF"
+      setUint32(length - 8);
+      setUint32(0x45564157); // "WAVE"
+      setUint32(0x20746d66); // "fmt "
+      setUint32(16);
+      setUint16(1);          // PCM
+      setUint16(numOfChan);
+      setUint32(abuffer.sampleRate);
+      setUint32(abuffer.sampleRate * 2 * numOfChan);
+      setUint16(numOfChan * 2);
+      setUint16(16);
+      setUint32(0x61746164); // "data"
+      setUint32(length - pos - 4);
+
+      for (i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+      while (pos < length) {
+        for (i = 0; i < numOfChan; i++) {
+          sample = Math.max(-1, Math.min(1, channels[i][offset]));
+          sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+          out.setInt16(pos, sample, true);
+          pos += 2;
+        }
+        offset++;
+      }
+      return new Blob([out], { type: "audio/wav" });
+    }
+
+    // Step 4: Export SRT Subtitles
+    function generateSrtString() {
+      let srt = '';
+      let cur = 0;
+      processedAudioSegments.forEach((seg, i) => {
+        const start = formatSrtTime(cur);
+        cur += seg.duration;
+        const end = formatSrtTime(cur);
+        cur += 0.3; // silence gap
+        srt += `${i + 1}
+${start} --> ${end}
+[${seg.speaker}]: ${seg.text}
+
+`;
+      });
+      return srt;
+    }
+
+    function downloadSrtFile() {
+      const srtData = generateSrtString();
+      const blob = new Blob([srtData], { type: 'text/plain;charset=utf-8' });
+      saveAs(blob, 'phu_de_video.srt');
+    }
+
+    function formatSrtTime(sec) {
+      const pad = (n, z = 2) => ('00' + n).slice(-z);
+      const date = new Date(sec * 1000);
+      return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())},${pad(date.getUTCMilliseconds(), 3)}`;
+    }
+
+    function formatTimeDuration(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // Step 5: Suggested B-roll Videos (Pixabay API / Direct links)
+    async function fetchSuggestedBrollVideos() {
+      const grid = document.getElementById('brollGrid');
+      grid.innerHTML = '';
+      brollLinksList = [];
+
+      // Extract unique keywords
+      const allKeywords = processedAudioSegments.flatMap(s => s.keywords || []);
+      const query = allKeywords.slice(0, 3).join(' ') || 'stadium sports celebration';
+      document.getElementById('brollKeywordTag').innerText = `Từ khóa: ${query}`;
+
+      const pixabayKey = localStorage.getItem('cfg_pixabay_key');
+
+      if (pixabayKey) {
+        try {
+          const res = await fetch(`https://pixabay.com/api/videos/?key=${pixabayKey}&q=${encodeURIComponent(query)}&per_page=8`);
+          const data = await res.json();
+          if (data.hits && data.hits.length > 0) {
+            data.hits.forEach(item => {
+              brollLinksList.push(item.videos.large?.url || item.videos.medium?.url || item.pageURL);
+              const card = document.createElement('div');
+              card.className = "bg-slate-950 border border-slate-800 rounded-xl overflow-hidden group";
+              card.innerHTML = `
+                <img src="${item.userImageURL || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400'}" class="w-full h-24 object-cover">
+                <div class="p-2 text-center">
+                  <a href="${item.pageURL}" target="_blank" class="text-[11px] text-teal-400 hover:underline font-semibold block truncate">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem clip Pixabay
+                  </a>
+                </div>
+              `;
+              grid.appendChild(card);
+            });
+            return;
+          }
+        } catch (e) {
+          console.warn('Pixabay fetch error', e);
+        }
+      }
+
+      // Default sample curated links
+      const samplePexels = [
+        { title: "Bóng đá & Sân cỏ", link: "https://www.pexels.com/search/videos/football%20stadium/" },
+        { title: "Cổ động viên ăn mừng", link: "https://www.pexels.com/search/videos/celebration%20crowd/" },
+        { title: "Phỏng vấn & Studio", link: "https://www.pexels.com/search/videos/podcast%20interview/" },
+        { title: "Thành phố & Đường phố", link: "https://www.pexels.com/search/videos/city%20traffic/" }
+      ];
+
+      samplePexels.forEach(item => {
+        brollLinksList.push(item.link);
+        const card = document.createElement('div');
+        card.className = "bg-slate-950 border border-slate-800 rounded-xl p-3 text-center space-y-2";
+        card.innerHTML = `
+          <div class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 mx-auto flex items-center justify-center text-sm">
+            <i class="fa-solid fa-video"></i>
+          </div>
+          <p class="text-xs font-semibold text-slate-200">${item.title}</p>
+          <a href="${item.link}" target="_blank" class="inline-block text-[11px] text-teal-400 hover:underline">
+            Tìm trên Pexels <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+          </a>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Step 6: Full ZIP Package download
+    async function downloadFullZipPackage() {
+      if (!mergedWavBlob) {
+        alert('Vui lòng tạo âm thanh trước khi xuất gói ZIP!');
+        return;
+      }
+
+      const zip = new JSZip();
+      zip.file("audio_hoi_thoai.wav", mergedWavBlob);
+      zip.file("phu_de.srt", generateSrtString());
+      
+      let textScript = "=== KỊCH BẢN PHÂN VAI HOÀN CHỈNH ===\n\n";
+      scriptItems.forEach((it, i) => {
+        textScript += `[${i + 1}] ${it.speaker} (${it.voice_code}):\n${it.text}\n\n`;
+      });
+      zip.file("kich_ban_chi_tiet.txt", textScript);
+
+      let brollText = "=== DANH SÁCH LINK TẢI VIDEO B-ROLL GỢI Ý ===\n\n" + brollLinksList.join('\n');
+      zip.file("tai_nguyen_broll_links.txt", brollText);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, "Goi_Tai_Nguyen_Dung_Video.zip");
+    }
+  </script>
+</body>
+</html>
