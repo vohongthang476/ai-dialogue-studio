@@ -220,7 +220,52 @@
     }
 
     // Dynamic auto-detect available models from the provided key
-    async function callGeminiDynamic(apiKey, prompt) {
+    async function async function callGeminiDynamic(apiKey, prompt) {
+      // 1. Thử gọi qua v1 chính thức (tương thích hoàn hảo với key GCP/AI Studio)
+      const endpoints = [
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+      ];
+
+      let lastError = null;
+
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: prompt }]
+              }],
+              generationConfig: {
+                temperature: 0.7
+              }
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            
+            // Xử lý chuỗi JSON
+            let clean = textResponse.trim();
+            if (clean.includes('```')) {
+              clean = clean.replace(/```json/gi, '').replace(/```/g, '').trim();
+            }
+            return JSON.parse(clean);
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            lastError = new Error(errData.error?.message || `Lỗi ${res.status}: ${res.statusText}`);
+          }
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      throw lastError || new Error("Không thể kết nối Gemini API. Vui lòng thử lại.");
+    }(apiKey, prompt) {
       const candidates = [
         'gemini-2.0-flash',
         'gemini-1.5-flash-latest',
